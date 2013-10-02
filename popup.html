@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+	<head>
+		<title>UBC Course Availability Popup</title>
+		<style>
+		@font-face {
+			font-family: 'OpenSansRegular';
+			src: url('fonts/OpenSans-Regular-webfont.woff') format('woff');
+			font-weight: normal;
+			font-style: normal;
+		}
+		body {
+			min-width: 350px;
+			font-family: OpenSansRegular;
+			padding: 5px 20px 5px 20px;
+		}
+		h1 {
+			text-align:center;
+			font-size: 14px;
+		}
+		#sessionselect {
+			text-align:center;
+		}
+		#watchdiv {
+			text-align:center;
+			margin-top: 10px;
+			padding-bottom: 15px;
+			border-bottom: 1px solid black;
+		}
+		#watchlist {
+			width: 100%;
+		}
+		#courselist {
+			width: 100%;
+		}
+		#courselist th, td {
+			padding: 0 2px 0 2px;
+		}
+		#courselist tr:hover {
+			background: #E0E0E0;
+		}
+		#resulttext {
+			text-align:center;
+		}
+		#resulttext button {
+			display: block;
+			margin: 5px auto 0 auto;
+		}
+		input[type=text] {
+			width: 63%;
+		}
+		</style>
+		<script src="jquery-2.0.3.min.js"></script>
+		<script src="popup.js"></script>
+	</head>
+	<body>
+		<h1>UBC Course Availability Checker</h1>
+		<div id="sessionselect">
+			<select id="yearsel"></select>
+			<select id="sessionsel"><option value="S">Summer</option><option value="W">Winter</option></select>
+		</div>
+		<div id="watchdiv"></div>
+		<p>Search:<br><input type="text" id="search">
+		<button id="check">Check availability</button></p>
+		<p id="resulttext"></p>
+	</body>
+</html>
+
