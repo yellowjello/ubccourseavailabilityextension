@@ -25,7 +25,6 @@ Flattened CourseList:
 	{
 		cid: "courseID",
 		name: "name",
-		sections:
 		sid: "secId",
 		type: "aType",
 		term: "termNum",
@@ -90,19 +89,25 @@ function Course(cid, name, sections) {
 	this.sections = sections;
 }
 
+// Input: sections - a section object
+// Effect: Add section into course
+// 		   If there is an existing section, replaced with matching section
+Course.prototype.addSection(section) {
+	var sectionIndex = findSection(section);
+	if (sectionIndex != null) { // There is an existing section
+		this.sections[sectionIndex] = section; // Replace
+	}
+	else {
+		this.sections.push(section); // Add to list of sections
+	}
+}
+
 // Input: sections - a list of sections
 // Effect: Add provided sections into course
 // 		   If there is an existing section, replaced with matching section
 Course.prototype.addSections(sections) {
 	for (var i = 0; i < sections.length; i++) {
-		var currSection = sections[i];
-		var sectionIndex = findSection(currSection);
-		if (sectionIndex != null) { // There is an existing section
-			this.sections[sectionIndex] = currSection; // Replace
-		}
-		else {
-			this.sections.push(currSection); // Add to list of sections
-		}
+		this.addSection(sections[i];);
 	}
 }
 

@@ -34,7 +34,7 @@ function search(data, callback) {
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4) {
 			// Process course html
-			var courseData = getCoursesFromHTML(xhr.responseText);
+			var courseData = getCourseFromCoursePage(xhr.responseText, data.dept, data.code);
 			callback(courseData);
 		}
 	}

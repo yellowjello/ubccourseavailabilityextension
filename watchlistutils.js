@@ -1,13 +1,11 @@
-function getCoursesFromHTML (htmldata) {
-	var courseData = {
-		id: data.dept+" "+data.code,
-		name: "",
-		sections: []
-	}
+function getCourseFromCoursePage (htmldata) {
 	var page = $($.parseHTML(htmldata));
 	// Get course name
 	var cname = $(page).find('h4:first').text();
-	courseData.name = $.trim(cname.replace(courseData.id,''));
+	courseName = $.trim(cname.replace(courseData.id,''));
+
+	var courseData = new Course(data.dept+" "+data.code, courseName, []);
+
 	var table = $(page).find("table.section-summary");
 	var tableObj = tableToObjJ(table);
 	// Go through each of the course section elements
@@ -25,11 +23,8 @@ function getCoursesFromHTML (htmldata) {
 			}
 			continue;
 		}
-		courseData.sections.push(
-		{
-			year: data.year, session: data.session, id: courseData.id,
-			secNum: secNum, type: type, term: term, lastKnownStatus: status
-		});
+		var sectionData = new Section(secNum, type, term, status);
+		courseData.addSection(sectionData);
 	}
 	return courseData;
 }
