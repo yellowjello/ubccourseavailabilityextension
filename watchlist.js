@@ -40,29 +40,35 @@ function CourseList(year, session, courses) {
 	this.courses = courses;
 }
 
-// Input: courses - a list of courses
-// Effect: Add provided courses into CourseList
+// Input: course - a course
+// Effect: Add provided course into CourseList
 // 		   If there is an existing course, the new course is used, with the sections merged
-CourseList.prototype.addCourses(courses) {
-	for (var i = 0; i < courses.length; i++) {
-		var currCourse = courses[i];
-		var courseIndex = findCourse(currCourse);
-		if (courseIndex != null) { // There is an existing course
-			currCourse.addSections(this.courses[courseIndex].sections); // Add existing sections into the replacement course
-			this.courses[courseIndex] = currCourse; // Replace
-		}
-		else {
-			this.courses.push(currCourse); // Add to list of courses
-		}
+CourseList.prototype.addCourse = function (course) {
+	var courseIndex = this.findCourse(course);
+	if (courseIndex != null) { // There is an existing course
+		course.addSections(this.courses[courseIndex].sections); // Add existing sections into the replacement course
+		this.courses[courseIndex] = course; // Replace
+	}
+	else {
+		this.courses.push(course); // Add to list of courses
 	}
 }
 
-CourseList.prototype.removeCourses() {
+// Input: courses - a list of courses
+// Effect: Add provided courses into CourseList
+// 		   If there is an existing course, the new course is used, with the sections merged
+CourseList.prototype.addCourses = function (courses) {
+	for (var i = 0; i < courses.length; i++) {
+		this.addCourse(courses[i]);
+	}
+}
+
+CourseList.prototype.removeCourses = function () {
 
 }
 
 // Returns flattened representation of CourseList
-CourseList.prototype.flatten() {
+CourseList.prototype.flatten = function () {
 	var flatCourseList = [];
 	for (var i = 0; i < this.courses.length; i++) {
 		var currCourse = this.courses[i];
@@ -72,7 +78,7 @@ CourseList.prototype.flatten() {
 
 // Input: course - a course to find
 // Output: index of course if found, null otherwise
-CourseList.prototype.findCourse(course) {
+CourseList.prototype.findCourse = function (course) {
 	for (var i = 0; i < this.courses.length; i++) {
 		var currCourse = this.courses[i];
 		if (currCourse.isEqual(course)) {
@@ -92,8 +98,8 @@ function Course(cid, name, sections) {
 // Input: sections - a section object
 // Effect: Add section into course
 // 		   If there is an existing section, replaced with matching section
-Course.prototype.addSection(section) {
-	var sectionIndex = findSection(section);
+Course.prototype.addSection = function (section) {
+	var sectionIndex = this.findSection(section);
 	if (sectionIndex != null) { // There is an existing section
 		this.sections[sectionIndex] = section; // Replace
 	}
@@ -105,14 +111,14 @@ Course.prototype.addSection(section) {
 // Input: sections - a list of sections
 // Effect: Add provided sections into course
 // 		   If there is an existing section, replaced with matching section
-Course.prototype.addSections(sections) {
+Course.prototype.addSections = function (sections) {
 	for (var i = 0; i < sections.length; i++) {
-		this.addSection(sections[i];);
+		this.addSection(sections[i]);
 	}
 }
 
 // Returns a flattened (denormalized) version of the course (array of supersections)
-Course.prototype.flatten() {
+Course.prototype.flatten = function () {
 	var flatCourse = [];
 	for (var i = 0; i < this.sections.length; i++) {
 		var currSection = this.sections[i];
@@ -130,7 +136,7 @@ Course.prototype.flatten() {
 
 // Input: section - a section to find in the course
 // Output: index of section if found, null otherwise
-Course.prototype.findSection(section) {
+Course.prototype.findSection = function (section) {
 	for (var i = 0; i < this.sections.length; i++) {
 		var currSection = this.sections[i];
 		if (currSection.isEqual(section)) {
@@ -141,7 +147,7 @@ Course.prototype.findSection(section) {
 }
 
 // Returns whether the course is equal to another course
-Course.prototype.isEqual(course) {
+Course.prototype.isEqual = function (course) {
 	return this.cid == course.cid;
 }
 
@@ -155,7 +161,7 @@ function Section(sid, type, term, lastKnownStatus) {
 }
 
 // Returns whether the section is equal to another section
-Section.prototype.isEqual(section) {
+Section.prototype.isEqual = function (section) {
 	return this.sid == section.sid;
 }
 
@@ -166,13 +172,13 @@ function WatchList(courseList) {
 
 // Input: courseList - a courseList object
 // Effect: Merges given courseList with existing courseList
-WatchList.prototype.add(courseList) {
+WatchList.prototype.add = function (courseList) {
 	if (this.courseList.year != courseList.year || this.courseList.session != courseList.session) {
 		throw new Error("Different year or session");
 	}
 	this.courseList.addCourses(courseList.courses);
 }
 
-WatchList.prototype.remove(courseList) {
+WatchList.prototype.remove = function (courseList) {
 	
 }

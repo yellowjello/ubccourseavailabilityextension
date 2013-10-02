@@ -110,10 +110,10 @@ function updateSearch(response) {
 	if (response.sections.length > 0) {
 		currCourse = response;
 		var outputText = "";
-		outputText += "<b>"+response.id+": "+response.name+"</b>";
+		outputText += "<b>"+response.cid+": "+response.name+"</b>";
 		outputText += "<table id='courselist'><tr><th><input type='checkbox' id='selectall'></input></th><th>Section</th><th>Type</th><th>Term</th><th>Status</th></tr>";
 		for (var i = 0; i < response.sections.length; i++) {
-			outputText += "<tr><td><input type='checkbox'></input></td><td>"+response.sections[i].secNum+"</td><td>"+response.sections[i].type+"</td><td>"+response.sections[i].term+"</td><td>"+response.sections[i].lastKnownStatus+"</td></tr>";
+			outputText += "<tr><td><input type='checkbox'></input></td><td>"+response.sections[i].sid+"</td><td>"+response.sections[i].type+"</td><td>"+response.sections[i].term+"</td><td>"+response.sections[i].lastKnownStatus+"</td></tr>";
 		}
 		outputText += "</table><button id='add'>Add to Watchlist</button>";
 		document.getElementById("resulttext").innerHTML = outputText;
@@ -127,32 +127,35 @@ function updateSearch(response) {
 
 // Collects selected sections + sends to background.js
 function addSelected() {
-	var watchlist = { sections: [] };
+	if (!currCourse) return;
+	var watchCourse = new Course(currCourse.cid, currCourse.name, []);
 	var checkboxes = document.querySelectorAll("#courselist td input[type='checkbox']");
 	if (checkboxes.length > 0) {
 		for (var i = 0; i < checkboxes.length; i++) {
 			if (checkboxes[i].checked) {
-				watchlist.sections.push(currCourse.sections[i]);
+				watchCourse.addSection(currCourse.sections[i]);
 			}
 		}
 	}
-	if (watchlist.sections.length > 0) {
+	if (watchCourse.sections.length > 0) {
 		chrome.extension.sendMessage(
 		{
 			messageType: "add",
-			data: watchlist
+			data: watchCourse
 		},
 		updateAdded);
 		document.getElementById("resulttext").innerHTML = "Adding selected sections...";
 	}
 }
 function updateAdded(response) {
+	watchlist = response;
 	outputWatchlist(response);
 	document.getElementById("resulttext").innerHTML = "Successfully added sections";
 }
 
 /* -------------- Stuff executed on page load -------------------- */
 var currCourse;
+var watchlist;
 // Stuff to do when pop-up loaded
 document.addEventListener('DOMContentLoaded', function () {
 	// Attach checkavail to button

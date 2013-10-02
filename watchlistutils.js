@@ -1,10 +1,11 @@
-function getCourseFromCoursePage (htmldata) {
+function getCourseFromCoursePage (htmldata, dept, code) {
 	var page = $($.parseHTML(htmldata));
 	// Get course name
+	var cid = dept+" "+code;
 	var cname = $(page).find('h4:first').text();
-	courseName = $.trim(cname.replace(courseData.id,''));
+	courseName = $.trim(cname.replace(cid,''));
 
-	var courseData = new Course(data.dept+" "+data.code, courseName, []);
+	var courseData = new Course(cid, courseName, []);
 
 	var table = $(page).find("table.section-summary");
 	var tableObj = tableToObjJ(table);
