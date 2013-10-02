@@ -2,28 +2,38 @@
 All message objects will be of the following form:
 { messageType: "aType", data: { (message data) } }
 
-Watchlist object: (proposed)
+CourseList object:
 {
+	year: "aYear",
+	session: "S or W",
 	courses:
 	[
 		{	<- Course Object
-			year: aYear,
-			session: "S or W",
-			id: "courseID",
+			cid: "courseID",
 			name: "name",
 			sections:
 			[
 				{	<- Section Object
-					secNum: aNum,
+					sid: "secId",
 					type: "aType",
-					term: "termNum:,
+					term: "termNum",
 					lastKnownStatus: "aStatus"
 				}
 			]
 		}
 	]
 }
-			
+Flattened CourseList:
+[
+	{
+		cid: "courseID",
+		name: "name",
+		sid: "secId",
+		type: "aType",
+		term: "termNum",
+		lastKnownStatus: "aStatus"
+	}
+]
 */
 
 /* ------------------------------- Message functions ------------------------------ */
@@ -42,20 +52,18 @@ function search(data, callback) {
 	xhr.send();
 }
 
-// Adds selected courses to local watchlist + saves
+// Adds selected course (w/ sections) to local watchlist + saves
 function add(data, callback) {
 	// Check if there is a local watchlist
 	if ($.isEmptyObject(currWatchlist)) {
-		currWatchlist = data;
+		currWatchlist = new CourseList(data.year, data.session, []);
+		currWatchlist.addCourse(toCourse(data.course));
 	}
 	else {
-		// Added sections to local watchlist
-		for (var i=0; i < data.sections.length; i++) {
-			if (findSame(data.sections[i], currWatchlist) == null) {
-				currWatchlist.sections.push(data.sections[i]);
-			}
-		}
+		console.log(toCourse(data.course));
 	}
+	currWatchlist.addCourse(toCourse(data.course));
+
 	// Push local watchlist to storage
 	chrome.storage.sync.set({"watchlist": currWatchlist}, function() {
 		callback(currWatchlist);
@@ -77,6 +85,16 @@ function remove(data, callback) {
 		callback(currWatchlist);
 	});
 }
+
+// Retrieves watchlist
+function getWatchlist(callback) {
+	if ($.isEmptyObject(currWatchlist)) {
+		callback(null);
+	}
+	else {
+		callback(currWatchlist);
+	}
+}
 /* --------------------------- Helper functions --------------------------- */
 // Returns null or index
 function findSame(section, watchlist) {
@@ -91,9 +109,14 @@ function findSame(section, watchlist) {
 /* --------------------------- Executed on script load --------------------------- */
 // Load saved watchlist
 var currWatchlist;
-/*chrome.storage.sync.get("watchlist", function(data) {
-	currWatchlist = data;
-});*/
+chrome.storage.sync.get("watchlist", function(data) {
+	if ($.isEmptyObject(data)) {
+		currWatchlist = data;
+	}
+	else {
+		currWatchlist = toCourseList(data.watchlist);
+	}
+});
 // Handles messages sent by extension
 chrome.extension.onMessage.addListener(function(message, sender, callback) {
 	if (message.messageType == "search") {
@@ -101,6 +124,12 @@ chrome.extension.onMessage.addListener(function(message, sender, callback) {
 	}
 	else if (message.messageType == "add") {
 		add(message.data, callback);
+	}
+	else if (message.messageType == "remove") {
+		remove(message.data, callback);
+	}
+	else if (message.messageType == "getWatchlist") {
+		getWatchlist(callback);
 	}
 	return true;
 });

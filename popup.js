@@ -2,28 +2,38 @@
 All message objects will be of the following form:
 { messageType: "aType", data: { (message data) } }
 
-Watchlist object: (proposed)
+CourseList object:
 {
+	year: "aYear",
+	session: "S or W",
 	courses:
 	[
 		{	<- Course Object
-			year: aYear,
-			session: "S or W",
-			id: "courseID",
+			cid: "courseID",
 			name: "name",
 			sections:
 			[
 				{	<- Section Object
-					secNum: aNum,
+					sid: "secId",
 					type: "aType",
-					term: "termNum:,
+					term: "termNum",
 					lastKnownStatus: "aStatus"
 				}
 			]
 		}
 	]
 }
-				
+Flattened CourseList:
+[
+	{
+		cid: "courseID",
+		name: "name",
+		sid: "secId",
+		type: "aType",
+		term: "termNum",
+		lastKnownStatus: "aStatus"
+	}
+]
 */
 
 /* ----------------------- Page helper functions -------------------------------- */
@@ -42,7 +52,6 @@ function addSessionOptions() {
 		var selectedyear = (month == 0) ? curryear-1 : curryear;
 		var selectedsession = (month >= 2 && month <= 5) ? "S" : "W";
 	}
-	console.log(month)
 	$("#yearsel").val(selectedyear);
 	$("#sessionsel").val(selectedsession);
 }
@@ -59,10 +68,10 @@ function checkAll() {
 // Creates watchlist
 function outputWatchlist(watchlist) {
 	var outputText = "";
-	if (watchlist.sections.length > 0) {
+	if (watchlist.length > 0) {
 		outputText += "<b>Watchlist</b><br><table id='watchlist'><tr><th>Section</th><th>Status</th></tr>";
-		for (var i = 0; i < watchlist.sections.length; i++) {
-			outputText += "<tr><td title='Term "+watchlist.sections[i].term+", "+watchlist.sections[i].type+"'>"+watchlist.sections[i].id+" "+watchlist.sections[i].secNum+"</td><td title='"+watchlist.sections[i].lastKnownStatus+"'>"+watchlist.sections[i].lastKnownStatus+"</td></tr>";
+		for (var i = 0; i < watchlist.length; i++) {
+			outputText += "<tr><td title='Term "+watchlist[i].term+", "+watchlist[i].type+"'>"+watchlist[i].cid+" "+watchlist[i].sid+"</td><td title='"+watchlist[i].lastKnownStatus+"'>"+watchlist[i].lastKnownStatus+"</td></tr>";
 		}
 		document.getElementById("watchdiv").innerHTML = outputText;
 	}
@@ -76,7 +85,7 @@ function updatePageState() {
 }
 
 function clearPageState() {
-	localStorage["query"] = null;
+	localStorage["query"] = "";
 }
 
 /* ---------- Functions that send + receive messages from background.js ---------- */
@@ -108,7 +117,8 @@ function searchSubmit() {
 // Handles search response
 function updateSearch(response) {
 	if (response.sections.length > 0) {
-		currCourse = response;
+		currCourse = toCourse(response);
+		currCourse.prototype = Course.prototype;
 		var outputText = "";
 		outputText += "<b>"+response.cid+": "+response.name+"</b>";
 		outputText += "<table id='courselist'><tr><th><input type='checkbox' id='selectall'></input></th><th>Section</th><th>Type</th><th>Term</th><th>Status</th></tr>";
@@ -125,7 +135,7 @@ function updateSearch(response) {
 	}
 }
 
-// Collects selected sections + sends to background.js
+// Collects selected sections + sends to background.js to be added to watchlist
 function addSelected() {
 	if (!currCourse) return;
 	var watchCourse = new Course(currCourse.cid, currCourse.name, []);
@@ -141,27 +151,42 @@ function addSelected() {
 		chrome.extension.sendMessage(
 		{
 			messageType: "add",
-			data: watchCourse
+			data: {year: $("#yearsel").val(), session: $("#sessionsel").val(), course: watchCourse}
 		},
-		updateAdded);
+		function (response) {
+			updateAdded(response);
+			document.getElementById("resulttext").innerHTML = "Successfully added sections";
+		});
 		document.getElementById("resulttext").innerHTML = "Adding selected sections...";
 	}
 }
 function updateAdded(response) {
-	watchlist = response;
-	outputWatchlist(response);
-	document.getElementById("resulttext").innerHTML = "Successfully added sections";
+	if (!response) return;
+	var watchlist = toCourseList(response);
+	outputWatchlist(watchlist.flatten());
+	
+}
+// Retrieves watchlist from background.js
+function loadWatchlist() {
+	chrome.extension.sendMessage(
+	{
+		messageType: "getWatchlist",
+		data: {}
+	},
+	updateAdded);	
 }
 
-/* -------------- Stuff executed on page load -------------------- */
+/* -------------- Stuff executed on page load ------------------------------ */
 var currCourse;
-var watchlist;
 // Stuff to do when pop-up loaded
 document.addEventListener('DOMContentLoaded', function () {
 	// Attach checkavail to button
 	document.getElementById("check").addEventListener('click', searchSubmit);
 	// Add session selector
 	addSessionOptions();
+
+	// Show watchlist (if there is one)
+	loadWatchlist();
 	
 	// Restore textbox
 	if (localStorage["query"]) {

@@ -1,7 +1,7 @@
 /*
 CourseList object:
 {
-	year: aYear,
+	year: "aYear",
 	session: "S or W",
 	courses:
 	[
@@ -74,6 +74,7 @@ CourseList.prototype.flatten = function () {
 		var currCourse = this.courses[i];
 		flatCourseList = flatCourseList.concat(currCourse.flatten());
 	}
+	return flatCourseList;
 }
 
 // Input: course - a course to find
@@ -86,6 +87,14 @@ CourseList.prototype.findCourse = function (course) {
 		}
 	}
 	return null;
+}
+
+function toCourseList(courselist) {
+	var nCourseList = new CourseList(courselist.year, courselist.session, []);
+	for (var i = 0; i < courselist.courses.length; i++) {
+		nCourseList.addCourse(toCourse(courselist.courses[i]));
+	}
+	return nCourseList;
 }
 
 /* ------------------------ Course ------------------------------ */
@@ -151,6 +160,15 @@ Course.prototype.isEqual = function (course) {
 	return this.cid == course.cid;
 }
 
+// Turns a course with no functions into a course with functions
+function toCourse(course) {
+	var nCourse = new Course(course.cid, course.name, []);
+	for (var i = 0; i < course.sections.length; i++) {
+		nCourse.addSection(toSection(course.sections[i]));
+	}
+	return nCourse;
+}
+
 
 /* ------------------------ Section ---------------------------- */
 function Section(sid, type, term, lastKnownStatus) {
@@ -163,6 +181,10 @@ function Section(sid, type, term, lastKnownStatus) {
 // Returns whether the section is equal to another section
 Section.prototype.isEqual = function (section) {
 	return this.sid == section.sid;
+}
+
+function toSection(section) {
+	return new Section(section.sid, section.type, section.term, section.lastKnownStatus);
 }
 
 /* -------------------------- WatchList ---------------------- */
