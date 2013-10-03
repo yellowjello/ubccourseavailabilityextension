@@ -63,8 +63,23 @@ CourseList.prototype.addCourses = function (courses) {
 	}
 }
 
-CourseList.prototype.removeCourses = function () {
+// Removes a flattened course section
+// If a course no longer has any sections left, it is removed.
+CourseList.prototype.removeCourseSection = function (courseSection) {
+	var course = unFlattenCourse(courseSection);
+	var courseIndex = this.findCourse(course);
+	if (courseIndex != null) { // There is an existing course
+		this.courses[courseIndex].removeSection(course.sections[0]);
+		if (this.courses[courseIndex].sections.length < 1) {
+			this.courses.splice(courseIndex,1);
+		}
+	}
+}
 
+CourseList.prototype.removeCourseSections = function (courseSections) {
+	for (var i = 0; i < courseSections.length; i++) {
+		this.removeCourseSection(courseSections[i]);
+	}
 }
 
 // Returns flattened representation of CourseList
@@ -126,6 +141,15 @@ Course.prototype.addSections = function (sections) {
 	}
 }
 
+// Input: sections - a section object
+// Effect: Removes the given section from course, if exists
+Course.prototype.removeSection = function (section) {
+	var sectionIndex = this.findSection(section);
+	if (sectionIndex != null) { // There is an existing section
+		this.sections.splice(sectionIndex,1); // Remove section
+	}
+}
+
 // Returns a flattened (denormalized) version of the course (array of supersections)
 Course.prototype.flatten = function () {
 	var flatCourse = [];
@@ -141,6 +165,13 @@ Course.prototype.flatten = function () {
 		});
 	}
 	return flatCourse;
+}
+
+// Unflattens a flattened courseSection
+function unFlattenCourse(courseSection) {
+	var course = new Course(courseSection.cid, courseSection.name, []);
+	course.addSection(new Section(courseSection.sid, courseSection.type, courseSection.term, courseSection.lastKnownStatus));
+	return course;
 }
 
 // Input: section - a section to find in the course

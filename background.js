@@ -59,9 +59,6 @@ function add(data, callback) {
 		currWatchlist = new CourseList(data.year, data.session, []);
 		currWatchlist.addCourse(toCourse(data.course));
 	}
-	else {
-		console.log(toCourse(data.course));
-	}
 	currWatchlist.addCourse(toCourse(data.course));
 
 	// Push local watchlist to storage
@@ -70,17 +67,14 @@ function add(data, callback) {
 	});
 }
 
-// Removes (one) section from local watchlist
+// Removes multiple sections from local watchlist
 function remove(data, callback) {
 	// If there's no local watchlist
-	if (!currWatchlist) {
-		callback(currWatchlist);
+	if ($.isEmptyObject(currWatchlist)) {
+		callback(null);
 		return;
 	}
-	var index = findSame(data.section, currWatchlist);
-	if (index != null) {
-		array.splice(index,1);
-	}
+	currWatchlist.removeCourseSections(data);
 	chrome.storage.sync.set({"watchlist": currWatchlist}, function() {
 		callback(currWatchlist);
 	});

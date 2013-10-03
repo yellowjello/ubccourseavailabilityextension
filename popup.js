@@ -57,9 +57,11 @@ function addSessionOptions() {
 }
 
 // Checks all checkboxes
-function checkAll() {
-	var isChecked = document.getElementById("selectall").checked;
-	var checkboxes = document.querySelectorAll("#courselist input[type='checkbox']");
+function checkAll(id) {
+	//var isChecked = document.getElementById("selectall").checked;
+	var isChecked = this.checked;
+	//var checkboxes = document.querySelectorAll("#courselist input[type='checkbox']");
+	var checkboxes = $(this).parents("tr").siblings().find("input[type='checkbox']");
 	for (var i = 0; i < checkboxes.length; i++) {
 		checkboxes[i].checked = isChecked;
 	}
@@ -69,11 +71,17 @@ function checkAll() {
 function outputWatchlist(watchlist) {
 	var outputText = "";
 	if (watchlist.length > 0) {
-		outputText += "<b>Watchlist</b><br><table id='watchlist'><tr><th>Section</th><th>Status</th></tr>";
+		outputText += "<b>Watchlist</b><br><table id='watchlist'><tr><th><input type='checkbox' class='selectall'></input></th><th>Section</th><th>Status</th></tr>";
 		for (var i = 0; i < watchlist.length; i++) {
-			outputText += "<tr><td title='Term "+watchlist[i].term+", "+watchlist[i].type+"'>"+watchlist[i].cid+" "+watchlist[i].sid+"</td><td title='"+watchlist[i].lastKnownStatus+"'>"+watchlist[i].lastKnownStatus+"</td></tr>";
+			outputText += "<tr><td><input type='checkbox'></input></td><td title='Term "+watchlist[i].term+", "+watchlist[i].type+"'>"+watchlist[i].cid+" "+watchlist[i].sid+"</td><td title='"+watchlist[i].lastKnownStatus+"'>"+watchlist[i].lastKnownStatus+"</td></tr>";
 		}
+		outputText += "</table><button id='remove'>Remove from Watchlist</button>";
 		document.getElementById("watchdiv").innerHTML = outputText;
+		$(".selectall").each(function () { this.addEventListener('change', checkAll); });
+		document.getElementById("remove").addEventListener('click', removeSelected);
+	}
+	else {
+		document.getElementById("watchdiv").innerHTML = "";
 	}
 }
 
@@ -121,13 +129,13 @@ function updateSearch(response) {
 		currCourse.prototype = Course.prototype;
 		var outputText = "";
 		outputText += "<b>"+response.cid+": "+response.name+"</b>";
-		outputText += "<table id='courselist'><tr><th><input type='checkbox' id='selectall'></input></th><th>Section</th><th>Type</th><th>Term</th><th>Status</th></tr>";
+		outputText += "<table id='courselist'><tr><th><input type='checkbox' class='selectall'></input></th><th>Section</th><th>Type</th><th>Term</th><th>Status</th></tr>";
 		for (var i = 0; i < response.sections.length; i++) {
 			outputText += "<tr><td><input type='checkbox'></input></td><td>"+response.sections[i].sid+"</td><td>"+response.sections[i].type+"</td><td>"+response.sections[i].term+"</td><td>"+response.sections[i].lastKnownStatus+"</td></tr>";
 		}
 		outputText += "</table><button id='add'>Add to Watchlist</button>";
 		document.getElementById("resulttext").innerHTML = outputText;
-		document.getElementById("selectall").addEventListener('change', checkAll);
+		$(".selectall").each(function () { this.addEventListener('change', checkAll); });
 		document.getElementById("add").addEventListener('click', addSelected);
 	}
 	else {
@@ -154,17 +162,41 @@ function addSelected() {
 			data: {year: $("#yearsel").val(), session: $("#sessionsel").val(), course: watchCourse}
 		},
 		function (response) {
-			updateAdded(response);
+			showWatchlist(response);
 			document.getElementById("resulttext").innerHTML = "Successfully added sections";
 		});
 		document.getElementById("resulttext").innerHTML = "Adding selected sections...";
 	}
 }
-function updateAdded(response) {
+
+// Collects selected sections + sends to background.js to be removed from watchlist
+function removeSelected() {
+	if (!currWatchlist) return;
+	var toRemove = [];
+	var checkboxes = document.querySelectorAll("#watchlist td input[type='checkbox']");
+	if (checkboxes.length > 0) {
+		for (var i = 0; i < checkboxes.length; i++) {
+			if (checkboxes[i].checked) {
+				toRemove.push(currWatchlist[i]);
+			}
+		}
+	}
+	if (toRemove.length > 0) {
+		chrome.extension.sendMessage(
+		{
+			messageType: "remove",
+			data: toRemove
+		},
+		function (response) {
+			showWatchlist(response);
+		});
+	}
+}
+function showWatchlist(response) {
 	if (!response) return;
 	var watchlist = toCourseList(response);
-	outputWatchlist(watchlist.flatten());
-	
+	currWatchlist = watchlist.flatten();
+	outputWatchlist(currWatchlist);
 }
 // Retrieves watchlist from background.js
 function loadWatchlist() {
@@ -173,11 +205,12 @@ function loadWatchlist() {
 		messageType: "getWatchlist",
 		data: {}
 	},
-	updateAdded);	
+	showWatchlist);	
 }
 
 /* -------------- Stuff executed on page load ------------------------------ */
 var currCourse;
+var currWatchlist;
 // Stuff to do when pop-up loaded
 document.addEventListener('DOMContentLoaded', function () {
 	// Attach checkavail to button
