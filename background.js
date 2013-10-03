@@ -59,6 +59,8 @@ function add(data, callback) {
 		currWatchlist = new CourseList(data.year, data.session, []);
 		currWatchlist.addCourse(toCourse(data.course));
 	}
+	currWatchlist.year = data.year;
+	currWatchlist.session = data.session;
 	currWatchlist.addCourse(toCourse(data.course));
 
 	// Push local watchlist to storage
@@ -80,6 +82,31 @@ function remove(data, callback) {
 	});
 }
 
+function updateWatchlist(callback) {
+	if ($.isEmptyObject(currWatchlist)) {
+		callback(null);
+		return;
+	}
+	for (var i = 0; i < currWatchlist.courses.length; i++) {
+		var currCourse = currWatchlist.courses[i];
+		var parts = currCourse.cid.split(" ");
+		var dept = parts[0];
+		var code = parts[1];
+		var url = "https://courses.students.ubc.ca/cs/main?sessyr="+currWatchlist.year+"&sesscd="+currWatchlist.session+"&pname=subjarea&tname=subjareas&req=3&dept="+dept+"&course="+code;
+		var xhr = new XMLHttpRequest();
+		xhr.onreadystatechange = function() {
+			if (xhr.readyState == 4) {
+				// Process course html
+				var courseData = getCourseFromCoursePage(xhr.responseText, dept, code);
+				currWatchlist.updateCourse(courseData);
+			}
+		}
+		xhr.open("GET", url, true);
+		xhr.send();
+	}
+	callback(currWatchlist);
+}
+
 // Retrieves watchlist
 function getWatchlist(callback) {
 	if ($.isEmptyObject(currWatchlist)) {
@@ -89,15 +116,24 @@ function getWatchlist(callback) {
 		callback(currWatchlist);
 	}
 }
-/* --------------------------- Helper functions --------------------------- */
-// Returns null or index
-function findSame(section, watchlist) {
-	for (var i = 0; i < watchlist.sections.length; i++) {
-		if (watchlist.sections[i].year == section.year && watchlist.sections[i].session == section.session && watchlist.sections[i].id == section.id && watchlist.sections[i].secNum == section.secNum) {
-			return i;
+
+function notifyWatchlist(watchlist) {
+	var opt = {
+		type: "list",
+		title: "The following sections are available:",
+		iconUrl: "icon.png",
+		items: []
+	}
+	for (var i = 0; i < watchlist.courses.length; i++) {
+		var currCourse = watchlist.courses[i];
+		for (var j = 0; j < currCourse.sections.length; j++) {
+			var currSection = currCourse.sections[j];
+			if (currSection.lastKnownStatus == "Available") {
+				opt.items.push({title: currCourse.cid, message: currSection.sid});
+			}
 		}
 	}
-	return null;
+	chrome.notifications.create("notice", opt, function () {});
 }
 
 /* --------------------------- Executed on script load --------------------------- */
@@ -122,8 +158,20 @@ chrome.extension.onMessage.addListener(function(message, sender, callback) {
 	else if (message.messageType == "remove") {
 		remove(message.data, callback);
 	}
+	else if (message.messageType == "updateWatchlist") {
+		updateWatchlist(callback);
+	}
 	else if (message.messageType == "getWatchlist") {
 		getWatchlist(callback);
 	}
 	return true;
+});
+chrome.alarms.create("updater", {
+	delayInMinutes: 1,
+	periodInMinutes: 10
+});
+chrome.alarms.onAlarm.addListener(function (alarm) {
+	if (alarm.name == "updater") {
+		updateWatchlist(notifyWatchlist);
+	}
 });

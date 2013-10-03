@@ -10,6 +10,8 @@
   },
   
   "permissions": [
+  "alarms",
+  "notifications",
 	"storage",
 	"background",
     "https://*.ubc.ca/"

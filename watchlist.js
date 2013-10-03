@@ -63,6 +63,20 @@ CourseList.prototype.addCourses = function (courses) {
 	}
 }
 
+// Input: course - a course with updated course data
+// Effect: Updates a course using provided course data
+CourseList.prototype.updateCourse = function (course) {
+	var courseIndex = this.findCourse(course);
+	if (courseIndex != null) {
+		this.courses[courseIndex].name = course.name;
+		for (var i = 0; i < course.sections.length; i++) {
+			if (this.courses[courseIndex].findSection(course.sections[i]) != null) {
+				this.courses[courseIndex].addSection(course.sections[i]);
+			}
+		}
+	}
+}
+
 // Removes a flattened course section
 // If a course no longer has any sections left, it is removed.
 CourseList.prototype.removeCourseSection = function (courseSection) {
@@ -216,22 +230,4 @@ Section.prototype.isEqual = function (section) {
 
 function toSection(section) {
 	return new Section(section.sid, section.type, section.term, section.lastKnownStatus);
-}
-
-/* -------------------------- WatchList ---------------------- */
-function WatchList(courseList) {
-	this.courseList = courseList;
-}
-
-// Input: courseList - a courseList object
-// Effect: Merges given courseList with existing courseList
-WatchList.prototype.add = function (courseList) {
-	if (this.courseList.year != courseList.year || this.courseList.session != courseList.session) {
-		throw new Error("Different year or session");
-	}
-	this.courseList.addCourses(courseList.courses);
-}
-
-WatchList.prototype.remove = function (courseList) {
-	
 }

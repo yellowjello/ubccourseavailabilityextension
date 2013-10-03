@@ -58,9 +58,7 @@ function addSessionOptions() {
 
 // Checks all checkboxes
 function checkAll(id) {
-	//var isChecked = document.getElementById("selectall").checked;
 	var isChecked = this.checked;
-	//var checkboxes = document.querySelectorAll("#courselist input[type='checkbox']");
 	var checkboxes = $(this).parents("tr").siblings().find("input[type='checkbox']");
 	for (var i = 0; i < checkboxes.length; i++) {
 		checkboxes[i].checked = isChecked;
@@ -71,7 +69,7 @@ function checkAll(id) {
 function outputWatchlist(watchlist) {
 	var outputText = "";
 	if (watchlist.length > 0) {
-		outputText += "<b>Watchlist</b><br><table id='watchlist'><tr><th><input type='checkbox' class='selectall'></input></th><th>Section</th><th>Status</th></tr>";
+		outputText += "<b>Watchlist</b><button id='update'>Update</button><br><table id='watchlist'><tr><th><input type='checkbox' class='selectall'></input></th><th>Section</th><th>Status</th></tr>";
 		for (var i = 0; i < watchlist.length; i++) {
 			outputText += "<tr><td><input type='checkbox'></input></td><td title='Term "+watchlist[i].term+", "+watchlist[i].type+"'>"+watchlist[i].cid+" "+watchlist[i].sid+"</td><td title='"+watchlist[i].lastKnownStatus+"'>"+watchlist[i].lastKnownStatus+"</td></tr>";
 		}
@@ -79,6 +77,7 @@ function outputWatchlist(watchlist) {
 		document.getElementById("watchdiv").innerHTML = outputText;
 		$(".selectall").each(function () { this.addEventListener('change', checkAll); });
 		document.getElementById("remove").addEventListener('click', removeSelected);
+		document.getElementById("update").addEventListener('click', refreshWatchlist);
 	}
 	else {
 		document.getElementById("watchdiv").innerHTML = "";
@@ -197,6 +196,15 @@ function showWatchlist(response) {
 	var watchlist = toCourseList(response);
 	currWatchlist = watchlist.flatten();
 	outputWatchlist(currWatchlist);
+}
+// Tells backgroundd.js to update the watchlist
+function refreshWatchlist() {
+	chrome.extension.sendMessage(
+	{
+		messageType: "updateWatchlist",
+		data: {}
+	},
+	showWatchlist);	
 }
 // Retrieves watchlist from background.js
 function loadWatchlist() {
